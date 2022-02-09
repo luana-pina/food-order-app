@@ -16,6 +16,14 @@ function formIsValid(entries) {
   }
   return formIsValid;
 }
+function convertUserData(userData) {
+  return {
+    name: userData.name.value,
+    street: userData.street.value,
+    postalCode: userData.postal.value,
+    city: userData.city.value,
+  };
+}
 
 function Checkout(props) {
   const nameInputRef = useRef();
@@ -65,6 +73,7 @@ function Checkout(props) {
     if (!formIsValid(updatedInputsData)) {
       return;
     }
+    props.onConfirm(convertUserData(updatedInputsData));
   }
 
   const controlInvalidNameStyle = `${style.control} ${
