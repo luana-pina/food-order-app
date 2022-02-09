@@ -4,9 +4,12 @@ import CartItem from "./CartItem/CartItem";
 import Modal from "../UI/Modal/Modal";
 import style from "./Cart.module.css";
 import Checkout from "./Checkout/Checkout";
+import { Fragment } from "react/cjs/react.production.min";
 
 function Cart(props) {
   const [isCheckout, setIsCheckout] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successSubmit, setSuccessSubmit] = useState(false);
   const cartCtx = useContext(CartContext);
   const totalAmount = `$${cartCtx.totalAmount.toFixed(2)}`;
   const hasItems = cartCtx.items.length > 0;
@@ -20,8 +23,9 @@ function Cart(props) {
   function orderHandler() {
     setIsCheckout(true);
   }
-  function submitOrderHandler(userData) {
-    fetch(
+  async function submitOrderHandler(userData) {
+    setIsSubmitting(true);
+    await fetch(
       "https://food-order-app-62352-default-rtdb.firebaseio.com/orders.json",
       {
         method: "POST",
@@ -31,6 +35,9 @@ function Cart(props) {
         }),
       }
     );
+    setIsSubmitting(false);
+    setSuccessSubmit(true);
+    cartCtx.clearCart();
   }
 
   const cartItems = (
@@ -61,17 +68,38 @@ function Cart(props) {
     </div>
   );
 
+  let cartContent;
+  if (successSubmit) {
+    cartContent = (
+      <Fragment>
+        <p>Successfully sent the order!</p>
+        <div className={style.actions}>
+          <button className={style.button} onClick={props.onClose}>
+            Close
+          </button>
+        </div>
+      </Fragment>
+    );
+  } else {
+    cartContent = (
+      <Fragment>
+        {cartItems}
+        <div className={style.total}>
+          <span>Total Amount</span>
+          <span>{totalAmount}</span>
+        </div>
+        {isCheckout && (
+          <Checkout onConfirm={submitOrderHandler} onCancel={props.onClose} />
+        )}
+        {!isCheckout && modalButtons}
+      </Fragment>
+    );
+  }
+
   return (
     <Modal onClose={props.onClose}>
-      {cartItems}
-      <div className={style.total}>
-        <span>Total Amount</span>
-        <span>{totalAmount}</span>
-      </div>
-      {isCheckout && (
-        <Checkout onConfirm={submitOrderHandler} onCancel={props.onClose} />
-      )}
-      {!isCheckout && modalButtons}
+      {!isSubmitting && cartContent}
+      {isSubmitting && <p>Sending order data...</p>}
     </Modal>
   );
 }
